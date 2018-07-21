@@ -1,6 +1,13 @@
 from googletrans import Translator
 import random
 import config
+import tweepy
+import os
+
+auth = tweepy.OAuthHandler(config.consumer_key, config.consumer_secret)
+auth.set_access_token(config.access_token, config.token_secret)
+#api = twitter.Api(consumer_key=config.consumer_key, consumer_secret=config.consumer_secret, access_token_key=config.access_token, access_token_secret=config.token_secret)
+api = tweepy.API(auth)
 
 def file_len(fname):
     with open(fname) as f:
@@ -37,6 +44,15 @@ def bad_translate(quote):
     quote = translator.translate(quote, dest="en").text
     return quote
 
+def delete_line(filename, line_number):
+    newdata = "mynewstring"
+    with open(filename, 'r') as f:
+        lines = f.read().split('\n')
+        del lines[line_number]
+    print("Deleting line", line_number)
+    with open(filename,'w') as f:
+        f.write('\n'.join(lines))
+
 translator = Translator()
 quotefile = "quotes.txt"
 
@@ -46,20 +62,27 @@ quotefile_len = file_len(quotefile)
 
 print("Quotefile size is", quotefile_len,"lines.")
 
-#quotefile = open("quotes.txt", "r")
-#print(quotefile.read())
-
-daily_quote_number = random.randint(1,quotefile_len)
-
 with open(quotefile) as f:
     quote_list = f.readlines()
-
 quote_list = [x.strip() for x in quote_list]
 
-quote_body = quote_list[daily_quote_number].partition("~~")[0]
-quote_author = quote_list[daily_quote_number].partition("~~")[2]
+while True:
+    daily_quote_number = random.randint(1,quotefile_len)
 
-print("Today's quote is: \"",quote_body,"\" - ", quote_author, sep='')
+    quote_body = quote_list[daily_quote_number]
 
-bad_quote = bad_translate(quote_body)
-print("\"", bad_quote,"\" - ", quote_author, sep='')
+    print("Today's quote is: \"",quote_body,"\"", sep='')
+
+    bad_quote = bad_translate(quote_body)
+
+    #bad_quote = "test"
+
+    print("\"", bad_quote,"\"", sep='')
+
+    if len(bad_quote) < 280:
+        api.update_status(bad_quote)
+        print("Posted to Twitter!")
+        delete_line(quotefile,daily_quote_number)
+        break
+
+    delete_line(quotefile,daily_quote_number)

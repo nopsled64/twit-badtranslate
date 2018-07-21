@@ -1,5 +1,6 @@
 from googletrans import Translator
 import random
+import config
 
 def file_len(fname):
     with open(fname) as f:
